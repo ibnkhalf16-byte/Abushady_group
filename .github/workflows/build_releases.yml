@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   unpack-all:
-    name: Unpack Files
+    name: Unpack Project
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -36,7 +36,7 @@ jobs:
               except Exception:
                   continue
           if not target_file:
-              print("No all_code.txt found")
+              print("No valid all_code.txt file found!")
               exit(0)
           parts = re.split(r"=== FILE:\s*(.+?)\s*===", content)
           for i in range(1, len(parts), 2):
@@ -51,11 +51,11 @@ jobs:
                   out.write(file_data)
           '
 
-      - name: Force bypass login in main.dart
+      - name: Setup App Assets and Icon
         run: |
-          if [ -f "lib/main.dart" ]; then
-            sed -i 's/home: const LoginScreen()/home: const MainDashboardScreen()/g' lib/main.dart
-            sed -i "s/import 'screens\/auth\/login_screen.dart';/import 'screens\/home\/home_screen.dart';/g" lib/main.dart
+          mkdir -p assets/images
+          if [ -f "logo.png" ]; then
+            cp logo.png assets/images/logo.png
           fi
 
       - name: Commit Extracted Structure
@@ -64,7 +64,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
           if ! git diff --staged --quiet; then
-            git commit -m "Auto sync and bypass login [skip ci]"
+            git commit -m "Auto sync full project code and assets [skip ci]"
             git push origin HEAD:${{ github.ref }}
           fi
 
@@ -90,27 +90,28 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Setup Project & Icon
+      - name: Prepare Project
         run: |
           if [ ! -d "android" ]; then
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           fi
           flutter pub get
           if [ -f "assets/images/logo.png" ]; then
+            flutter pub add dev:flutter_launcher_icons
             dart run flutter_launcher_icons || true
           fi
 
       - name: Build Android Release APK
         run: flutter build apk --release
 
-      - name: Upload APK
+      - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
           name: AbuShadyTransport-Android-APK
           path: build/app/outputs/flutter-apk/app-release.apk
 
   build-windows:
-    name: Build Windows Release
+    name: Build Windows Desktop Release
     needs: unpack-all
     runs-on: windows-latest
     steps:
@@ -125,23 +126,29 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Enable Desktop
+      - name: Enable Desktop Support
         run: flutter config --enable-windows-desktop
 
-      - name: Setup Windows Project & Icon
+      - name: Prepare Windows Runner
+        shell: pwsh
         run: |
           if (!(Test-Path "windows")) {
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           }
           flutter pub get
-          if (Test-Path "assets/images/logo.png") {
-            dart run flutter_launcher_icons
-          }
 
-      - name: Build Windows Release
+      - name: Build Windows Executable
+        shell: pwsh
         run: |
           flutter build windows --release
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath AbuShadyTransport-Windows-x64.zip -Force
+
+      - name: Package Windows ZIP
+        shell: pwsh
+        run: |
+          $releaseFolder = "build\windows\x64\runner\Release"
+          if (Test-Path $releaseFolder) {
+            Compress-Archive -Path "$releaseFolder\*" -DestinationPath "AbuShadyTransport-Windows-x64.zip" -Force
+          }
 
       - name: Upload Windows Bundle
         uses: actions/upload-artifact@v4
