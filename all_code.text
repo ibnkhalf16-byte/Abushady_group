@@ -1,0 +1,1349 @@
+=== FILE: lib/core/constants/app_colors.dart ===
+import 'package:flutter/material.dart';
+
+class AppColors {
+  static const Color background = Color(0xFF0F172A); // Slate 900
+  static const Color surface = Color(0xFF1E293B);    // Slate 800
+  static const Color surfaceLight = Color(0xFF334155);// Slate 700
+  static const Color primary = Color(0xFF38BDF8);    // Sky Blue
+  static const Color border = Color(0x1AFFFFFF);
+
+  static const Color success = Color(0xFF10B981);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color danger = Color(0xFFEF4444);
+  static const Color info = Color(0xFF0284C7);
+}
+
+=== FILE: lib/core/constants/api_constants.dart ===
+class ApiConstants {
+  // الرابط المولد عبر Cloudflare Tunnel لخادم الشركة
+  static const String baseUrl = 'https://transport.abushady.com/api';
+  
+  static const String auth = '$baseUrl/Auth';
+  static const String dailyTrips = '$baseUrl/DailyTrips';
+  static const String carsSettlements = '$baseUrl/CarsSettlements';
+  static const String driverSettlements = '$baseUrl/DriverSettlements';
+  static const String ahda = '$baseUrl/Ahda';
+  static const String advances = '$baseUrl/Advance';
+  static const String safe = '$baseUrl/Safe';
+  static const String customers = '$baseUrl/Customer';
+  static const String carAccount = '$baseUrl/CarAccount';
+  static const String carMaintenance = '$baseUrl/CarMaintenance';
+  static const String basicData = '$baseUrl/BasicData';
+  static const String users = '$baseUrl/Users';
+}
+
+=== FILE: lib/main.dart ===
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'core/constants/app_colors.dart';
+import 'screens/auth/login_screen.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const AbuShadyApp());
+}
+
+class AbuShadyApp extends StatelessWidget {
+  const AbuShadyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'أبو شادي لمقاولات النقل',
+      debugShowCheckedModeBanner: false,
+      locale: const Locale('ar', 'EG'),
+      supportedLocales: const [Locale('ar', 'EG')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      themeMode: ThemeMode.dark,
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: AppColors.background,
+        fontFamily: 'Tahoma',
+        colorScheme: const ColorScheme.dark(
+          primary: AppColors.primary,
+          surface: AppColors.surface,
+        ),
+      ),
+      home: const LoginScreen(),
+    );
+  }
+}
+
+=== FILE: lib/screens/auth/login_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+import '../home/home_screen.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscure = true;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _handleLogin() async {
+    final u = _usernameController.text.trim();
+    final p = _passwordController.text.trim();
+
+    if (u.isEmpty || p.isEmpty) {
+      setState(() => _errorMessage = 'يرجى إدخال اسم المستخدم وكلمة المرور.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiConstants.auth}/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userName': u, 'password': p}),
+      );
+
+      final data = jsonDecode(res.body);
+
+      if (res.statusCode == 200) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainDashboardScreen()),
+        );
+      } else {
+        setState(() => _errorMessage = data['message'] ?? 'بيانات الدخول غير صحيحة.');
+      }
+    } catch (_) {
+      setState(() => _errorMessage = 'تعذر الاتصال بالخادم. تحقق من تشغيل السيرفر أو النفق.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Container(
+                padding: const EdgeInsets.all(26),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 75,
+                      height: 75,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(colors: [Color(0xFF0D47A1), Color(0xFF1976D2)]),
+                      ),
+                      child: const Center(
+                        child: Text('أ', style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Colors.white)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('أبو شادي لمقاولات النقل', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 6),
+                    Text('تسجيل الدخول للنظام', style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.55))),
+                    const SizedBox(height: 20),
+                    if (_errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: AppColors.danger.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                        child: Text(_errorMessage!, style: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 12), textAlign: TextAlign.center),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    TextField(
+                      controller: _usernameController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'اسم المستخدم',
+                        prefixIcon: const Icon(Icons.person_outline, color: AppColors.primary),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscure,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'كلمة المرور',
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.white54),
+                          onPressed: () => setState(() => _obscure = !_obscure),
+                        ),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1976D2),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: _isLoading ? null : _handleLogin,
+                        child: _isLoading
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text('دخول للنظام', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('تمت البرمجة بواسطة علي خلف', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/home/home_screen.dart ===
+import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
+import '../daily/daily_screen.dart';
+import '../ahda/ahda_screen.dart';
+import '../advances/advances_screen.dart';
+import '../customers/customers_screen.dart';
+import '../cars/car_settlement_screen.dart';
+import '../driver_settlements/driver_settlements_screen.dart';
+import '../safe/safe_screen.dart';
+import '../car_account/car_account_screen.dart';
+import '../carmaintenance/carmaintenance_screen.dart';
+import '../basic_data/basic_data_screen.dart';
+import '../users/users_screen.dart';
+
+class MainDashboardScreen extends StatelessWidget {
+  const MainDashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Map<String, dynamic>> menuItems = [
+      {'title': 'اليومية', 'icon': Icons.calendar_month_rounded, 'grad': [const Color(0xFF2563EB), const Color(0xFF1D4ED8)], 'screen': const DailyScreen()},
+      {'title': 'العهد', 'icon': Icons.assignment_rounded, 'grad': [const Color(0xFF7C3AED), const Color(0xFF5B21B6)], 'screen': const AhdaScreen()},
+      {'title': 'سلف سائقين', 'icon': Icons.account_balance_wallet_rounded, 'grad': [const Color(0xFF0891B2), const Color(0xFF0E7490)], 'screen': const AdvancesScreen()},
+      {'title': 'حسابات العملاء', 'icon': Icons.groups_rounded, 'grad': [const Color(0xFF059669), const Color(0xFF047857)], 'screen': const CustomersScreen()},
+      {'title': 'تصفية سيارات', 'icon': Icons.local_shipping_rounded, 'grad': [const Color(0xFFEA580C), const Color(0xFFC2410C)], 'screen': const CarSettlementScreen()},
+      {'title': 'تصفية سائق', 'icon': Icons.badge_rounded, 'grad': [const Color(0xFFDB2777), const Color(0xFFBE185D)], 'screen': const DriverSettlementsScreen()},
+      {'title': 'الخزنة', 'icon': Icons.savings_rounded, 'grad': [const Color(0xFFD97706), const Color(0xFFB45309)], 'screen': const SafeScreen()},
+      {'title': 'كشف حساب سيارة', 'icon': Icons.analytics_rounded, 'grad': [const Color(0xFF4F46E5), const Color(0xFF3730A3)], 'screen': const CarAccountScreen()},
+      {'title': 'صيانة سيارة', 'icon': Icons.build_circle_rounded, 'grad': [const Color(0xFF64748B), const Color(0xFF334155)], 'screen': const CarMaintenanceScreen()},
+      {'title': 'التكويد', 'icon': Icons.settings_suggest_rounded, 'grad': [const Color(0xFF0F766E), const Color(0xFF115E59)], 'screen': const BasicDataScreen()},
+      {'title': 'المستخدمين', 'icon': Icons.manage_accounts_rounded, 'grad': [const Color(0xFF475569), const Color(0xFF1E293B)], 'screen': const UsersScreen()},
+    ];
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        body: SafeArea(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.local_shipping_rounded, color: AppColors.primary, size: 30),
+                          SizedBox(width: 10),
+                          Text(
+                            'أبو شادي لمقاولات النقل',
+                            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'نظام إدارة ومتابعة مقاولات النقل والحسابات',
+                        style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: 1.15,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final item = menuItems[index];
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => item['screen']));
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(colors: item['grad']),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Icon(item['icon'], color: Colors.white, size: 28),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                item['title'],
+                                style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: menuItems.length,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/daily/daily_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class DailyScreen extends StatefulWidget {
+  const DailyScreen({super.key});
+
+  @override
+  State<DailyScreen> createState() => _DailyScreenState();
+}
+
+class _DailyScreenState extends State<DailyScreen> {
+  List<dynamic> trips = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchTrips();
+  }
+
+  Future<void> fetchTrips() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse(ApiConstants.dailyTrips));
+      if (res.statusCode == 200) {
+        setState(() {
+          trips = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('اليومية ومتابعة النقلات'),
+          backgroundColor: AppColors.surface,
+          actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: fetchTrips)],
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: trips.length,
+                itemBuilder: (context, index) {
+                  final t = trips[index];
+                  final bool isSettled = t['isSettled'] ?? false;
+
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: const BorderSide(color: AppColors.border),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.between,
+                            children: [
+                              Text('${t['carPlate']} - ${t['driverName']}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                              if (isSettled)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(color: AppColors.warning.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                                  child: const Text('🔒 مصفاة', style: TextStyle(color: AppColors.warning, fontSize: 12, fontWeight: FontWeight.bold)),
+                                )
+                              else
+                                const Text('متاحة', style: TextStyle(color: AppColors.success, fontSize: 12)),
+                            ],
+                          ),
+                          const Divider(color: AppColors.border, height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('الوزن: ${t['weight']} طن', style: const TextStyle(color: Colors.white70)),
+                              Text('النولون: ${t['pricePerTon']} ج.م', style: const TextStyle(color: Colors.white70)),
+                              Text('الإجمالي: ${t['totalValue']} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('العهدة: ${t['trustAmount']} ج.م', style: const TextStyle(color: AppColors.danger)),
+                              Text('الصافي: ${t['netAmount']} ج.م', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/ahda/ahda_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class AhdaScreen extends StatefulWidget {
+  const AhdaScreen({super.key});
+
+  @override
+  State<AhdaScreen> createState() => _AhdaScreenState();
+}
+
+class _AhdaScreenState extends State<AhdaScreen> {
+  List<dynamic> summaries = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadSummary();
+  }
+
+  Future<void> loadSummary() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse('${ApiConstants.ahda}/summary'));
+      if (res.statusCode == 200) {
+        setState(() {
+          summaries = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('كشف حساب العهد الشهرية'),
+          backgroundColor: AppColors.surface,
+          actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: loadSummary)],
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: summaries.length,
+                itemBuilder: (context, index) {
+                  final s = summaries[index];
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.border)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(s['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                          const Divider(color: AppColors.border),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('رصيد منقول: ${s['previousBalance']} ج.م', style: const TextStyle(color: Colors.white70)),
+                              Text('+ مضاف: ${s['totalAdded']} ج.م', style: const TextStyle(color: AppColors.success)),
+                              Text('- منصرف: ${s['totalSpent']} ج.م', style: const TextStyle(color: AppColors.danger)),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text('صافي الرصيد: ${s['netBalance']} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/advances/advances_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class AdvancesScreen extends StatefulWidget {
+  const AdvancesScreen({super.key});
+
+  @override
+  State<AdvancesScreen> createState() => _AdvancesScreenState();
+}
+
+class _AdvancesScreenState extends State<AdvancesScreen> {
+  List<dynamic> advances = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAdvances();
+  }
+
+  Future<void> fetchAdvances() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse(ApiConstants.advances));
+      if (res.statusCode == 200) {
+        setState(() {
+          advances = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('سلف وسداد السائقين والتباعين'),
+          backgroundColor: AppColors.surface,
+          actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: fetchAdvances)],
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: advances.length,
+                itemBuilder: (context, index) {
+                  final a = advances[index];
+                  final bool isAdv = a['transactionType'] == 'Advance';
+                  final double amt = (a['amount'] as num?)?.toDouble() ?? 0.0;
+
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: AppColors.border)),
+                    child: ListTile(
+                      title: Text(a['personName'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      subtitle: Text('${a['date']} | ${a['description'] ?? "بدون بيان"}', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                      trailing: Text(
+                        '${amt.toStringAsFixed(2)} ج.م',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isAdv ? AppColors.danger : AppColors.success),
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/customers/customers_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class CustomersScreen extends StatefulWidget {
+  const CustomersScreen({super.key});
+
+  @override
+  State<CustomersScreen> createState() => _CustomersScreenState();
+}
+
+class _CustomersScreenState extends State<CustomersScreen> {
+  List<dynamic> customers = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCustomers();
+  }
+
+  Future<void> fetchCustomers() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse(ApiConstants.customers));
+      if (res.statusCode == 200) {
+        setState(() {
+          customers = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('حسابات العملاء'),
+          backgroundColor: AppColors.surface,
+          actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: fetchCustomers)],
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: customers.length,
+                itemBuilder: (context, index) {
+                  final c = customers[index];
+                  final double balance = (c['currentBalance'] as num?)?.toDouble() ?? 0.0;
+
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: AppColors.border)),
+                    child: ListTile(
+                      title: Text(c['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      subtitle: Text(c['phone'] ?? 'بدون هاتف', style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12)),
+                      trailing: Text(
+                        '${balance.toStringAsFixed(2)} ج.م',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: balance >= 0 ? AppColors.success : AppColors.danger),
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/cars/car_settlement_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class CarSettlementScreen extends StatefulWidget {
+  const CarSettlementScreen({super.key});
+
+  @override
+  State<CarSettlementScreen> createState() => _CarSettlementScreenState();
+}
+
+class _CarSettlementScreenState extends State<CarSettlementScreen> {
+  List<dynamic> availableTrips = [];
+  final Set<int> selectedTripIds = {};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadAvailableTrips();
+  }
+
+  Future<void> loadAvailableTrips() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse('${ApiConstants.carsSettlements}/available-trips'));
+      if (res.statusCode == 200) {
+        setState(() {
+          availableTrips = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  double get totalSelectedNet => availableTrips
+      .where((t) => selectedTripIds.contains(t['id']))
+      .fold(0.0, (sum, t) => sum + (t['net'] as num).toDouble());
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('تصفية نقلات السيارات'), backgroundColor: AppColors.surface),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: availableTrips.length,
+                      itemBuilder: (context, index) {
+                        final trip = availableTrips[index];
+                        final isSelected = selectedTripIds.contains(trip['id']);
+
+                        return Card(
+                          color: isSelected ? const Color(0xFF1E3A8A).withOpacity(0.3) : AppColors.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(color: isSelected ? AppColors.primary : AppColors.border),
+                          ),
+                          child: CheckboxListTile(
+                            activeColor: AppColors.primary,
+                            value: isSelected,
+                            onChanged: (val) {
+                              setState(() {
+                                if (val == true) {
+                                  selectedTripIds.add(trip['id']);
+                                } else {
+                                  selectedTripIds.remove(trip['id']);
+                                }
+                              });
+                            },
+                            title: Text('${trip['plateNumber']} - ${trip['driverName']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('نقلة: ${trip['tripName']} | صافي: ${trip['net']} ج.م'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: const BoxDecoration(
+                      color: AppColors.surface,
+                      border: Border(top: BorderSide(color: AppColors.border)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('النقلات المحددة: ${selectedTripIds.length}', style: const TextStyle(color: Colors.white70)),
+                            Text('المستحق النهائي: ${totalSelectedNet.toStringAsFixed(2)} ج.م', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 16)),
+                          ],
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.black),
+                          onPressed: selectedTripIds.isEmpty ? null : () {},
+                          child: const Text('اعتماد التصفية', style: TextStyle(fontWeight: FontWeight.bold)),
+                        )
+                      ],
+                    ),
+                  )
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/driver_settlements/driver_settlements_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class DriverSettlementsScreen extends StatefulWidget {
+  const DriverSettlementsScreen({super.key});
+
+  @override
+  State<DriverSettlementsScreen> createState() => _DriverSettlementsScreenState();
+}
+
+class _DriverSettlementsScreenState extends State<DriverSettlementsScreen> {
+  List<dynamic> settlements = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSettlements();
+  }
+
+  Future<void> fetchSettlements() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse(ApiConstants.driverSettlements));
+      if (res.statusCode == 200) {
+        setState(() {
+          settlements = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('تصفية السائقين والتباعين'), backgroundColor: AppColors.surface),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: settlements.length,
+                itemBuilder: (context, index) {
+                  final s = settlements[index];
+                  final double remaining = (s['remainingAmount'] as num?)?.toDouble() ?? 0.0;
+
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: AppColors.border)),
+                    child: ListTile(
+                      title: Text(s['driverName'] ?? s['loaderName'] ?? 'تصفية', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      subtitle: Text('تاريخ: ${s['settlementDate']}', style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12)),
+                      trailing: Text('${remaining.toStringAsFixed(2)} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/safe/safe_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class SafeScreen extends StatefulWidget {
+  const SafeScreen({super.key});
+
+  @override
+  State<SafeScreen> createState() => _SafeScreenState();
+}
+
+class _SafeScreenState extends State<SafeScreen> {
+  List<dynamic> safes = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSafes();
+  }
+
+  Future<void> fetchSafes() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse('${ApiConstants.safe}/accounts'));
+      if (res.statusCode == 200) {
+        setState(() {
+          safes = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('الخزينة والحسابات المالية'),
+          backgroundColor: AppColors.surface,
+          actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: fetchSafes)],
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: const EdgeInsets.all(14),
+                itemCount: safes.length,
+                itemBuilder: (context, index) {
+                  final s = safes[index];
+                  final double balance = (s['currentBalance'] as num?)?.toDouble() ?? 0.0;
+                  final double deposits = (s['totalDeposits'] as num?)?.toDouble() ?? 0.0;
+                  final double withdrawals = (s['totalWithdrawals'] as num?)?.toDouble() ?? 0.0;
+
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.border)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.between,
+                            children: [
+                              Text(s['name'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+                                child: Text(s['safeType'] ?? 'نقدية', style: const TextStyle(color: AppColors.primary, fontSize: 12)),
+                              ),
+                            ],
+                          ),
+                          const Divider(color: AppColors.border, height: 22),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('مقبوضات: +${deposits.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.success, fontSize: 13)),
+                              Text('مصروفات: -${withdrawals.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.danger, fontSize: 13)),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('الرصيد الفعلي الحالي:', style: TextStyle(color: Colors.white70)),
+                              Text('${balance.toStringAsFixed(2)} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18)),
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/car_account/car_account_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class CarAccountScreen extends StatefulWidget {
+  const CarAccountScreen({super.key});
+
+  @override
+  State<CarAccountScreen> createState() => _CarAccountScreenState();
+}
+
+class _CarAccountScreenState extends State<CarAccountScreen> {
+  List<dynamic> statements = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAccount();
+  }
+
+  Future<void> fetchAccount() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse(ApiConstants.carAccount));
+      if (res.statusCode == 200) {
+        setState(() {
+          statements = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('كشف حساب السيارات'), backgroundColor: AppColors.surface),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: statements.length,
+                itemBuilder: (context, index) {
+                  final s = statements[index];
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      title: Text(s['carPlate'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      subtitle: Text('إجمالي النقلات: ${s['tripsCount']} | صافي النولون: ${s['netIncome']} ج.م'),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/carmaintenance/carmaintenance_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class CarMaintenanceScreen extends StatefulWidget {
+  const CarMaintenanceScreen({super.key});
+
+  @override
+  State<CarMaintenanceScreen> createState() => _CarMaintenanceScreenState();
+}
+
+class _CarMaintenanceScreenState extends State<CarMaintenanceScreen> {
+  List<dynamic> items = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchMaintenance();
+  }
+
+  Future<void> fetchMaintenance() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse(ApiConstants.carMaintenance));
+      if (res.statusCode == 200) {
+        setState(() {
+          items = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('صيانة وإصلاح السيارات'), backgroundColor: AppColors.surface),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final m = items[index];
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      title: Text('${m['plateNumber']} - ${m['description']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      subtitle: Text('تاريخ: ${m['date']} | التكلفة: ${m['amount']} ج.م'),
+                      trailing: Text('${m['amount']} ج.م', style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold)),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: lib/screens/basic_data/basic_data_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class BasicDataScreen extends StatefulWidget {
+  const BasicDataScreen({super.key});
+
+  @override
+  State<BasicDataScreen> createState() => _BasicDataScreenState();
+}
+
+class _BasicDataScreenState extends State<BasicDataScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  Map<String, dynamic> data = {'cars': [], 'drivers': [], 'loaders': [], 'customers': []};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    fetchData();
+  }
+
+  Future<void> fetchData() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse('${ApiConstants.basicData}/all'));
+      if (res.statusCode == 200) {
+        setState(() {
+          data = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('التكويد والبيانات الأساسية'),
+          backgroundColor: AppColors.surface,
+          bottom: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            indicatorColor: AppColors.primary,
+            labelColor: AppColors.primary,
+            unselectedLabelColor: Colors.white60,
+            tabs: const [Tab(text: 'السيارات'), Tab(text: 'السائقين'), Tab(text: 'التباعين'), Tab(text: 'العملاء')],
+          ),
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildList(data['cars'], 'plateNumber', 'carName'),
+                  _buildList(data['drivers'], 'name', 'phone'),
+                  _buildList(data['loaders'], 'name', 'phone'),
+                  _buildList(data['customers'], 'name', 'phone'),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildList(List<dynamic>? list, String titleKey, String subKey) {
+    if (list == null || list.isEmpty) {
+      return const Center(child: Text('لا توجد بيانات مسجلة', style: TextStyle(color: Colors.white54)));
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        final item = list[index];
+        return Card(
+          color: AppColors.surface,
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            title: Text(item[titleKey] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            subtitle: Text(item[subKey] ?? '', style: TextStyle(color: Colors.white.withOpacity(0.55))),
+          ),
+        );
+      },
+    );
+  }
+}
+
+=== FILE: lib/screens/users/users_screen.dart ===
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/api_constants.dart';
+
+class UsersScreen extends StatefulWidget {
+  const UsersScreen({super.key});
+
+  @override
+  State<UsersScreen> createState() => _UsersScreenState();
+}
+
+class _UsersScreenState extends State<UsersScreen> {
+  List<dynamic> users = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUsers();
+  }
+
+  Future<void> fetchUsers() async {
+    setState(() => isLoading = true);
+    try {
+      final res = await http.get(Uri.parse(ApiConstants.users));
+      if (res.statusCode == 200) {
+        setState(() {
+          users = jsonDecode(res.body);
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('إدارة المستخدمين والصلاحيات'), backgroundColor: AppColors.surface),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: users.length,
+                itemBuilder: (context, index) {
+                  final u = users[index];
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      leading: const CircleAvatar(backgroundColor: AppColors.primary, child: Icon(Icons.person, color: Colors.black)),
+                      title: Text(u['userName'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      subtitle: Text(u['displayName'] ?? 'مستخدم نظام'),
+                      trailing: Text(u['isActive'] == true ? 'نشط' : 'معطل', style: TextStyle(color: u['isActive'] == true ? AppColors.success : AppColors.danger)),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+=== FILE: pubspec.yaml ===
+name: abushady_transport
+description: "نظام إدارة ومتابعة مقاولات النقل والحسابات"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  http: ^1.2.1
+  intl: ^0.19.0
+  pdf: ^3.11.1
+  printing: ^5.13.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
