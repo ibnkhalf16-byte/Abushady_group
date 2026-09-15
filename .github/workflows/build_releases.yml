@@ -17,53 +17,47 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
+          ref: ${{ github.ref_name }}
 
       - name: Extract Project Files
         run: |
-          python3 -c "
-          import os, re
+          python3 -c '
+          import os, re, glob
 
-          if not os.path.exists('all_code.txt'):
-              print('all_code.txt not found, continuing...')
+          files = glob.glob("*all_code*.txt")
+          if not files:
+              print("No all_code.txt found")
               exit(0)
 
-          with open('all_code.txt', 'r', encoding='utf-8', errors='ignore') as f:
+          target = files[0]
+          print(f"Extracting from: {target}")
+
+          with open(target, "r", encoding="utf-8", errors="ignore") as f:
               content = f.read()
 
-          parts = re.split(r'=== FILE:\s*(.+?)\s*===', content)
+          parts = re.split(r"=== FILE:\s*(.+?)\s*===", content)
 
-          extracted = 0
           for i in range(1, len(parts), 2):
               file_path = parts[i].strip()
-              file_data = parts[i+1].lstrip('\r\n')
+              file_data = parts[i+1].lstrip("\r\n")
 
-              if file_path.startswith('.github/workflows/'):
+              if file_path.startswith(".github/workflows/"):
                   continue
 
               dir_name = os.path.dirname(file_path)
-              if dir_name and not os.path.exists(dir_name):
+              if dir_name:
                   os.makedirs(dir_name, exist_ok=True)
 
-              with open(file_path, 'w', encoding='utf-8') as out:
+              with open(file_path, "w", encoding="utf-8") as out:
                   out.write(file_data)
-              print(f'Extracted: {file_path}')
-              extracted += 1
+              print(f"Wrote: {file_path}")
+          '
 
-          print(f'Successfully unpacked {extracted} files.')
-          "
-
-      - name: Commit and Push Extracted Files
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add lib/ pubspec.yaml AbuShadyApi/ assets/ || true
-          if ! git diff --staged --quiet; then
-            git commit -m "Auto extracted all project files [skip ci]"
-            git push origin HEAD:${{ github.ref_name }}
-          else
-            echo "No changes to commit."
-          fi
+      - name: Auto Commit & Push Extracted Files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto unpack full project files"
+          file_pattern: "lib/** pubspec.yaml AbuShadyApi/** assets/**"
 
   build-android:
     name: Build Android APK
@@ -87,19 +81,18 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Generate Android Folder If Missing
+      - name: Generate Android Folder
         run: |
           if [ ! -d "android" ]; then
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           fi
 
-      - name: Fetch Dependencies
-        run: flutter pub get
-
       - name: Build Android Release APK
-        run: flutter build apk --release
+        run: |
+          flutter pub get
+          flutter build apk --release
 
-      - name: Upload Android APK Artifact
+      - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
           name: AbuShadyTransport-Android-APK
@@ -124,20 +117,16 @@ jobs:
       - name: Enable Windows Desktop Support
         run: flutter config --enable-windows-desktop
 
-      - name: Generate Windows Folder If Missing
+      - name: Generate Windows Folder
         run: |
           if (!(Test-Path "windows")) {
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           }
 
-      - name: Fetch Dependencies
-        run: flutter pub get
-
       - name: Build Windows Executable
-        run: flutter build windows --release
-
-      - name: Compress Windows Release Bundle
         run: |
+          flutter pub get
+          flutter build windows --release
           Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath AbuShadyTransport-Windows-x64.zip -Force
 
       - name: Upload Windows Bundle Artifact
