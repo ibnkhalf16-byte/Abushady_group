@@ -24,24 +24,26 @@ jobs:
           python3 -c '
           import os, re, glob
 
-          # البحث عن أي ملف نصي موجود بالجذر يحتوي على الكود
+          # البحث في جميع الملفات النصية
           txt_files = glob.glob("*.txt")
           target_file = None
 
           for f in txt_files:
-              with open(f, "r", encoding="utf-8", errors="ignore") as check:
-                  first_bytes = check.read(300)
-                  if "=== FILE:" in first_bytes:
-                      target_file = f
-                      break
+              try:
+                  with open(f, "r", encoding="utf-8", errors="ignore") as check:
+                      data = check.read()
+                      if "=== FILE:" in data:
+                          target_file = f
+                          content = data
+                          break
+              except Exception as e:
+                  continue
 
           if not target_file:
-              print("No valid code master text file found!")
+              print("No valid code master text file found containing === FILE: tags!")
               exit(1)
 
-          print(f"Extracting from: {target_file}")
-          with open(target_file, "r", encoding="utf-8", errors="ignore") as f:
-              content = f.read()
+          print(f"Extracting successfully from: {target_file}")
 
           parts = re.split(r"=== FILE:\s*(.+?)\s*===", content)
 
@@ -65,16 +67,16 @@ jobs:
           print(f"SUCCESS: Extracted {count} files.")
           '
 
-      - name: Commit and Force Push Extracted Structure
+      - name: Commit and Push Extracted Structure
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add lib/ AbuShadyApi/ pubspec.yaml assets/ || true
+          git add -A
           if ! git diff --staged --quiet; then
             git commit -m "Auto unpack full project source code"
             git push origin HEAD:${{ github.ref }}
           else
-            echo "No new files detected to commit."
+            echo "No changes detected to commit."
           fi
 
   build-android:
