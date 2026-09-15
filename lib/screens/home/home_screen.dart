@@ -20,15 +20,15 @@ class MainDashboardScreen extends StatelessWidget {
     final List<Map<String, dynamic>> menuItems = [
       {'title': 'اليومية', 'icon': Icons.calendar_month_rounded, 'grad': [const Color(0xFF2563EB), const Color(0xFF1D4ED8)], 'screen': const DailyScreen()},
       {'title': 'العهد', 'icon': Icons.assignment_rounded, 'grad': [const Color(0xFF7C3AED), const Color(0xFF5B21B6)], 'screen': const AhdaScreen()},
-      {'title': 'سلف سائقين', 'icon': Icons.account_balance_wallet_rounded, 'grad': [const Color(0xFF0891B2), const Color(0xFF0E7490)], 'screen': const AdvancesScreen()},
+      {'title': 'سلف السائقين', 'icon': Icons.account_balance_wallet_rounded, 'grad': [const Color(0xFF0891B2), const Color(0xFF0E7490)], 'screen': const AdvancesScreen()},
       {'title': 'حسابات العملاء', 'icon': Icons.groups_rounded, 'grad': [const Color(0xFF059669), const Color(0xFF047857)], 'screen': const CustomersScreen()},
-      {'title': 'تصفية سيارات', 'icon': Icons.local_shipping_rounded, 'grad': [const Color(0xFFEA580C), const Color(0xFFC2410C)], 'screen': const CarSettlementScreen()},
-      {'title': 'تصفية سائق', 'icon': Icons.badge_rounded, 'grad': [const Color(0xFFDB2777), const Color(0xFFBE185D)], 'screen': const DriverSettlementsScreen()},
-      {'title': 'الخزنة', 'icon': Icons.savings_rounded, 'grad': [const Color(0xFFD97706), const Color(0xFFB45309)], 'screen': const SafeScreen()},
+      {'title': 'تصفية السيارات', 'icon': Icons.local_shipping_rounded, 'grad': [const Color(0xFFEA580C), const Color(0xFFC2410C)], 'screen': const CarSettlementScreen()},
+      {'title': 'تصفية السائقين', 'icon': Icons.badge_rounded, 'grad': [const Color(0xFFDB2777), const Color(0xFFBE185D)], 'screen': const DriverSettlementsScreen()},
+      {'title': 'الخزينة والحسابات', 'icon': Icons.savings_rounded, 'grad': [const Color(0xFFD97706), const Color(0xFFB45309)], 'screen': const SafeScreen()},
       {'title': 'كشف حساب سيارة', 'icon': Icons.analytics_rounded, 'grad': [const Color(0xFF4F46E5), const Color(0xFF3730A3)], 'screen': const CarAccountScreen()},
-      {'title': 'صيانة سيارة', 'icon': Icons.build_circle_rounded, 'grad': [const Color(0xFF64748B), const Color(0xFF334155)], 'screen': const CarMaintenanceScreen()},
-      {'title': 'التكويد', 'icon': Icons.settings_suggest_rounded, 'grad': [const Color(0xFF0F766E), const Color(0xFF115E59)], 'screen': const BasicDataScreen()},
-      {'title': 'المستخدمين', 'icon': Icons.manage_accounts_rounded, 'grad': [const Color(0xFF475569), const Color(0xFF1E293B)], 'screen': const UsersScreen()},
+      {'title': 'صيانة السيارات', 'icon': Icons.build_circle_rounded, 'grad': [const Color(0xFF64748B), const Color(0xFF334155)], 'screen': const CarMaintenanceScreen()},
+      {'title': 'التكويد الأساسي', 'icon': Icons.settings_suggest_rounded, 'grad': [const Color(0xFF0F766E), const Color(0xFF115E59)], 'screen': const BasicDataScreen()},
+      {'title': 'إدارة المستخدمين', 'icon': Icons.manage_accounts_rounded, 'grad': [const Color(0xFF475569), const Color(0xFF1E293B)], 'screen': const UsersScreen()},
     ];
 
     return Directionality(

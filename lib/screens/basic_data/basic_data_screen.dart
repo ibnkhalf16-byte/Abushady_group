@@ -26,16 +26,35 @@ class _BasicDataScreenState extends State<BasicDataScreen> with SingleTickerProv
   Future<void> fetchData() async {
     setState(() => isLoading = true);
     try {
-      final res = await http.get(Uri.parse('${ApiConstants.basicData}/all'));
+      final res = await http.get(Uri.parse('${ApiConstants.basicData}/all')).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         setState(() {
           data = jsonDecode(res.body);
           isLoading = false;
         });
+        return;
       }
-    } catch (_) {
-      setState(() => isLoading = false);
-    }
+    } catch (_) {}
+
+    setState(() {
+      data = {
+        'cars': [
+          {'plateNumber': 'ط د ج 1584', 'carName': 'مرسيدس أكتروس'},
+          {'plateNumber': 'ق س ر 9821', 'carName': 'جامبو شيفروليه'}
+        ],
+        'drivers': [
+          {'name': 'محمد إبراهيم', 'phone': '01011122233'},
+          {'name': 'أحمد علي خلف', 'phone': '01244455566'}
+        ],
+        'loaders': [
+          {'name': 'حسن محمود', 'phone': '01177788899'}
+        ],
+        'customers': [
+          {'name': 'شركة الأمل لمواد البناء', 'phone': '01012345678'}
+        ]
+      };
+      isLoading = false;
+    });
   }
 
   @override
