@@ -1,4 +1,4 @@
-name: Build Cross-Platform Releases (Android APK & Windows EXE)
+name: Extract Project Files & Build
 
 on:
   push:
@@ -9,34 +9,43 @@ permissions:
   contents: write
 
 jobs:
-  unpack-and-commit:
-    name: Unpack all_code.txt
+  unpack-all:
+    name: Unpack Files
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.ref_name }}
+          fetch-depth: 0
 
-      - name: Extract Project Files
+      - name: Find and Extract Any Master File
         run: |
           python3 -c '
           import os, re, glob
 
-          files = glob.glob("*all_code*.txt")
-          if not files:
-              print("No all_code.txt found")
-              exit(0)
+          # البحث عن أي ملف نصي موجود بالجذر يحتوي على الكود
+          txt_files = glob.glob("*.txt")
+          target_file = None
 
-          target = files[0]
-          print(f"Extracting from: {target}")
+          for f in txt_files:
+              with open(f, "r", encoding="utf-8", errors="ignore") as check:
+                  first_bytes = check.read(300)
+                  if "=== FILE:" in first_bytes:
+                      target_file = f
+                      break
 
-          with open(target, "r", encoding="utf-8", errors="ignore") as f:
+          if not target_file:
+              print("No valid code master text file found!")
+              exit(1)
+
+          print(f"Extracting from: {target_file}")
+          with open(target_file, "r", encoding="utf-8", errors="ignore") as f:
               content = f.read()
 
           parts = re.split(r"=== FILE:\s*(.+?)\s*===", content)
 
+          count = 0
           for i in range(1, len(parts), 2):
               file_path = parts[i].strip()
               file_data = parts[i+1].lstrip("\r\n")
@@ -50,24 +59,33 @@ jobs:
 
               with open(file_path, "w", encoding="utf-8") as out:
                   out.write(file_data)
-              print(f"Wrote: {file_path}")
+              print(f"Created: {file_path}")
+              count += 1
+
+          print(f"SUCCESS: Extracted {count} files.")
           '
 
-      - name: Auto Commit & Push Extracted Files
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto unpack full project files"
-          file_pattern: "lib/** pubspec.yaml AbuShadyApi/** assets/**"
+      - name: Commit and Force Push Extracted Structure
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lib/ AbuShadyApi/ pubspec.yaml assets/ || true
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto unpack full project source code"
+            git push origin HEAD:${{ github.ref }}
+          else
+            echo "No new files detected to commit."
+          fi
 
   build-android:
     name: Build Android APK
-    needs: unpack-and-commit
+    needs: unpack-all
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.ref }}
 
       - name: Setup Java JDK
         uses: actions/setup-java@v4
@@ -81,32 +99,32 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Generate Android Folder
+      - name: Create Platform Configs
         run: |
           if [ ! -d "android" ]; then
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           fi
 
-      - name: Build Android Release APK
+      - name: Build Android Release
         run: |
           flutter pub get
           flutter build apk --release
 
-      - name: Upload Android APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AbuShadyTransport-Android-APK
           path: build/app/outputs/flutter-apk/app-release.apk
 
   build-windows:
-    name: Build Windows Desktop Release
-    needs: unpack-and-commit
+    name: Build Windows Release
+    needs: unpack-all
     runs-on: windows-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.ref }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -114,24 +132,23 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Enable Windows Desktop Support
+      - name: Enable Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Generate Windows Folder
+      - name: Create Windows Config
         run: |
           if (!(Test-Path "windows")) {
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           }
 
-      - name: Build Windows Executable
+      - name: Build Windows EXE
         run: |
           flutter pub get
           flutter build windows --release
           Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath AbuShadyTransport-Windows-x64.zip -Force
 
-      - name: Upload Windows Bundle Artifact
+      - name: Upload Windows Bundle
         uses: actions/upload-artifact@v4
         with:
           name: AbuShadyTransport-Windows-x64
           path: AbuShadyTransport-Windows-x64.zip
-
