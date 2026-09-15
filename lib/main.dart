@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/constants/app_colors.dart';
-import 'screens/auth/login_screen.dart';
+import 'screens/home/home_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +34,8 @@ class AbuShadyApp extends StatelessWidget {
           surface: AppColors.surface,
         ),
       ),
-      home: const LoginScreen(),
+      home: const MainDashboardScreen(),
     );
   }
 }
+
