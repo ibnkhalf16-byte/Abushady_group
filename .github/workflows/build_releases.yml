@@ -1,4 +1,4 @@
-name: Extract Project Files & Build
+name: Build Releases
 
 on:
   push:
@@ -19,14 +19,12 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Find and Extract Any Master File
+      - name: Extract Files
         run: |
           python3 -c '
           import os, re, glob
-
           txt_files = glob.glob("*.txt")
           target_file = None
-
           for f in txt_files:
               try:
                   with open(f, "r", encoding="utf-8", errors="ignore") as check:
@@ -37,51 +35,33 @@ jobs:
                           break
               except Exception:
                   continue
-
           if not target_file:
               print("No valid code master text file found!")
-              exit(1)
-
-          print(f"Extracting from: {target_file}")
+              exit(0)
           parts = re.split(r"=== FILE:\s*(.+?)\s*===", content)
-
           count = 0
           for i in range(1, len(parts), 2):
               file_path = parts[i].strip()
               file_data = parts[i+1].lstrip("\r\n")
-
               if file_path.startswith(".github/workflows/"):
                   continue
-
               dir_name = os.path.dirname(file_path)
               if dir_name:
                   os.makedirs(dir_name, exist_ok=True)
-
               with open(file_path, "w", encoding="utf-8") as out:
                   out.write(file_data)
-              print(f"Created: {file_path}")
               count += 1
-
-          print(f"SUCCESS: Extracted {count} files.")
+          print(f"Extracted {count} files.")
           '
 
-      - name: Fix intl constraint permanently
-        run: |
-          if [ -f "pubspec.yaml" ]; then
-            sed -i 's/intl: ^0.19.0/intl: ^0.20.3/g' pubspec.yaml
-            sed -i 's/intl: any/intl: ^0.20.3/g' pubspec.yaml
-          fi
-
-      - name: Commit and Push Extracted Structure
+      - name: Commit Extracted Structure
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
           if ! git diff --staged --quiet; then
-            git commit -m "Auto unpack full project source code"
+            git commit -m "Auto sync files [skip ci]"
             git push origin HEAD:${{ github.ref }}
-          else
-            echo "No changes detected."
           fi
 
   build-android:
@@ -106,17 +86,16 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Setup Android Project & Fix Packages
+      - name: Generate Android Configs & Generate Icons
         run: |
           if [ ! -d "android" ]; then
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           fi
-          # ترقية حزمة intl إجبارياً لمنع تعارض flutter_localizations
-          flutter pub add intl:^0.20.3
+          flutter pub get
+          dart run flutter_launcher_icons || true
 
       - name: Build Android Release APK
-        run: |
-          flutter build apk --release
+        run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -140,15 +119,16 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Enable Windows Desktop
+      - name: Enable Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Setup Windows Project & Fix Packages
+      - name: Generate Windows Configs & Generate Icons
         run: |
           if (!(Test-Path "windows")) {
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           }
-          flutter pub add intl:^0.20.3
+          flutter pub get
+          dart run flutter_launcher_icons
 
       - name: Build Windows Release
         run: |
@@ -160,3 +140,4 @@ jobs:
         with:
           name: AbuShadyTransport-Windows-x64
           path: AbuShadyTransport-Windows-x64.zip
+
