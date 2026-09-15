@@ -1,11 +1,38 @@
+=== FILE: pubspec.yaml ===
+name: abushady_transport
+description: "نظام إدارة ومتابعة مقاولات النقل والحسابات"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  http: ^1.2.1
+  intl: ^0.20.2
+  pdf: ^3.11.1
+  printing: ^5.13.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
 === FILE: lib/core/constants/app_colors.dart ===
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color background = Color(0xFF0F172A); // Slate 900
-  static const Color surface = Color(0xFF1E293B);    // Slate 800
-  static const Color surfaceLight = Color(0xFF334155);// Slate 700
-  static const Color primary = Color(0xFF38BDF8);    // Sky Blue
+  static const Color background = Color(0xFF0F172A);
+  static const Color surface = Color(0xFF1E293B);
+  static const Color surfaceLight = Color(0xFF334155);
+  static const Color primary = Color(0xFF38BDF8);
   static const Color border = Color(0x1AFFFFFF);
 
   static const Color success = Color(0xFF10B981);
@@ -16,7 +43,6 @@ class AppColors {
 
 === FILE: lib/core/constants/api_constants.dart ===
 class ApiConstants {
-  // الرابط المولد عبر Cloudflare Tunnel لخادم الشركة
   static const String baseUrl = 'https://transport.abushady.com/api';
   
   static const String auth = '$baseUrl/Auth';
@@ -438,9 +464,9 @@ class _DailyScreenState extends State<DailyScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.between,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('${t['carPlate']} - ${t['driverName']}',
+                              Text('${t['carPlate'] ?? "-"} - ${t['driverName'] ?? "-"}',
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
                               if (isSettled)
                                 Container(
@@ -456,17 +482,17 @@ class _DailyScreenState extends State<DailyScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('الوزن: ${t['weight']} طن', style: const TextStyle(color: Colors.white70)),
-                              Text('النولون: ${t['pricePerTon']} ج.م', style: const TextStyle(color: Colors.white70)),
-                              Text('الإجمالي: ${t['totalValue']} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                              Text('الوزن: ${t['weight'] ?? 0} طن', style: const TextStyle(color: Colors.white70)),
+                              Text('النولون: ${t['pricePerTon'] ?? 0} ج.م', style: const TextStyle(color: Colors.white70)),
+                              Text('الإجمالي: ${t['totalValue'] ?? 0} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('العهدة: ${t['trustAmount']} ج.م', style: const TextStyle(color: AppColors.danger)),
-                              Text('الصافي: ${t['netAmount']} ج.م', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
+                              Text('العهدة: ${t['trustAmount'] ?? 0} ج.م', style: const TextStyle(color: AppColors.danger)),
+                              Text('الصافي: ${t['netAmount'] ?? 0} ج.م', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
                             ],
                           )
                         ],
@@ -545,18 +571,18 @@ class _AhdaScreenState extends State<AhdaScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(s['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                          Text(s['name'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
                           const Divider(color: AppColors.border),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('رصيد منقول: ${s['previousBalance']} ج.م', style: const TextStyle(color: Colors.white70)),
-                              Text('+ مضاف: ${s['totalAdded']} ج.م', style: const TextStyle(color: AppColors.success)),
-                              Text('- منصرف: ${s['totalSpent']} ج.م', style: const TextStyle(color: AppColors.danger)),
+                              Text('رصيد منقول: ${s['previousBalance'] ?? 0} ج.م', style: const TextStyle(color: Colors.white70)),
+                              Text('+ مضاف: ${s['totalAdded'] ?? 0} ج.م', style: const TextStyle(color: AppColors.success)),
+                              Text('- منصرف: ${s['totalSpent'] ?? 0} ج.م', style: const TextStyle(color: AppColors.danger)),
                             ],
                           ),
                           const SizedBox(height: 10),
-                          Text('صافي الرصيد: ${s['netBalance']} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('صافي الرصيد: ${s['netBalance'] ?? 0} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
                     ),
@@ -767,7 +793,7 @@ class _CarSettlementScreenState extends State<CarSettlementScreen> {
 
   double get totalSelectedNet => availableTrips
       .where((t) => selectedTripIds.contains(t['id']))
-      .fold(0.0, (sum, t) => sum + (t['net'] as num).toDouble());
+      .fold(0.0, (sum, t) => sum + ((t['net'] as num?)?.toDouble() ?? 0.0));
 
   @override
   Widget build(BuildContext context) {
@@ -805,8 +831,8 @@ class _CarSettlementScreenState extends State<CarSettlementScreen> {
                                 }
                               });
                             },
-                            title: Text('${trip['plateNumber']} - ${trip['driverName']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('نقلة: ${trip['tripName']} | صافي: ${trip['net']} ج.م'),
+                            title: Text('${trip['plateNumber'] ?? "-"} - ${trip['driverName'] ?? "-"}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('نقلة: ${trip['tripName'] ?? "-"} | صافي: ${trip['net'] ?? 0} ج.م'),
                           ),
                         );
                       },
@@ -903,7 +929,7 @@ class _DriverSettlementsScreenState extends State<DriverSettlementsScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: AppColors.border)),
                     child: ListTile(
                       title: Text(s['driverName'] ?? s['loaderName'] ?? 'تصفية', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text('تاريخ: ${s['settlementDate']}', style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12)),
+                      subtitle: Text('تاريخ: ${s['settlementDate'] ?? "-"}', style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12)),
                       trailing: Text('${remaining.toStringAsFixed(2)} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   );
@@ -984,7 +1010,7 @@ class _SafeScreenState extends State<SafeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.between,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(s['name'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                               Container(
@@ -1078,7 +1104,7 @@ class _CarAccountScreenState extends State<CarAccountScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     child: ListTile(
                       title: Text(s['carPlate'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text('إجمالي النقلات: ${s['tripsCount']} | صافي النولون: ${s['netIncome']} ج.م'),
+                      subtitle: Text('إجمالي النقلات: ${s['tripsCount'] ?? 0} | صافي النولون: ${s['netIncome'] ?? 0} ج.م'),
                     ),
                   );
                 },
@@ -1144,9 +1170,9 @@ class _CarMaintenanceScreenState extends State<CarMaintenanceScreen> {
                     color: AppColors.surface,
                     margin: const EdgeInsets.only(bottom: 10),
                     child: ListTile(
-                      title: Text('${m['plateNumber']} - ${m['description']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text('تاريخ: ${m['date']} | التكلفة: ${m['amount']} ج.م'),
-                      trailing: Text('${m['amount']} ج.م', style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold)),
+                      title: Text('${m['plateNumber'] ?? "-"} - ${m['description'] ?? "-"}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      subtitle: Text('تاريخ: ${m['date'] ?? "-"} | التكلفة: ${m['amount'] ?? 0} ج.م'),
+                      trailing: Text('${m['amount'] ?? 0} ج.م', style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold)),
                     ),
                   );
                 },
@@ -1319,31 +1345,4 @@ class _UsersScreenState extends State<UsersScreen> {
     );
   }
 }
-
-=== FILE: pubspec.yaml ===
-name: abushady_transport
-description: "نظام إدارة ومتابعة مقاولات النقل والحسابات"
-publish_to: 'none'
-version: 1.0.0+1
-
-environment:
-  sdk: '>=3.2.0 <4.0.0'
-
-dependencies:
-  flutter:
-    sdk: flutter
-  flutter_localizations:
-    sdk: flutter
-  http: ^1.2.1
-  intl: ^0.19.0
-  pdf: ^3.11.1
-  printing: ^5.13.2
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^3.0.0
-
-flutter:
-  uses-material-design: true
 
