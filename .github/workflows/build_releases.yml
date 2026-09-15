@@ -36,10 +36,9 @@ jobs:
               except Exception:
                   continue
           if not target_file:
-              print("No valid code master text file found!")
+              print("No all_code.txt found")
               exit(0)
           parts = re.split(r"=== FILE:\s*(.+?)\s*===", content)
-          count = 0
           for i in range(1, len(parts), 2):
               file_path = parts[i].strip()
               file_data = parts[i+1].lstrip("\r\n")
@@ -50,9 +49,14 @@ jobs:
                   os.makedirs(dir_name, exist_ok=True)
               with open(file_path, "w", encoding="utf-8") as out:
                   out.write(file_data)
-              count += 1
-          print(f"Extracted {count} files.")
           '
+
+      - name: Force bypass login in main.dart
+        run: |
+          if [ -f "lib/main.dart" ]; then
+            sed -i 's/home: const LoginScreen()/home: const MainDashboardScreen()/g' lib/main.dart
+            sed -i "s/import 'screens\/auth\/login_screen.dart';/import 'screens\/home\/home_screen.dart';/g" lib/main.dart
+          fi
 
       - name: Commit Extracted Structure
         run: |
@@ -60,7 +64,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
           if ! git diff --staged --quiet; then
-            git commit -m "Auto sync files [skip ci]"
+            git commit -m "Auto sync and bypass login [skip ci]"
             git push origin HEAD:${{ github.ref }}
           fi
 
@@ -86,13 +90,15 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Generate Android Configs & Generate Icons
+      - name: Setup Project & Icon
         run: |
           if [ ! -d "android" ]; then
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           fi
           flutter pub get
-          dart run flutter_launcher_icons || true
+          if [ -f "assets/images/logo.png" ]; then
+            dart run flutter_launcher_icons || true
+          fi
 
       - name: Build Android Release APK
         run: flutter build apk --release
@@ -122,13 +128,15 @@ jobs:
       - name: Enable Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Generate Windows Configs & Generate Icons
+      - name: Setup Windows Project & Icon
         run: |
           if (!(Test-Path "windows")) {
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           }
           flutter pub get
-          dart run flutter_launcher_icons
+          if (Test-Path "assets/images/logo.png") {
+            dart run flutter_launcher_icons
+          }
 
       - name: Build Windows Release
         run: |
@@ -140,4 +148,3 @@ jobs:
         with:
           name: AbuShadyTransport-Windows-x64
           path: AbuShadyTransport-Windows-x64.zip
-
