@@ -9,9 +9,6 @@ permissions:
   contents: write
 
 jobs:
-  # =========================================================================
-  # المرحلة 1: استخراج وتوزيع الملفات من all_code.txt عبر Python
-  # =========================================================================
   unpack-and-commit:
     name: Unpack all_code.txt
     runs-on: ubuntu-latest
@@ -41,7 +38,6 @@ jobs:
               file_path = parts[i].strip()
               file_data = parts[i+1].lstrip('\r\n')
 
-              # منع تعديل ملفات الـ workflows لتجنب رفض الصلاحيات من GitHub
               if file_path.startswith('.github/workflows/'):
                   continue
 
@@ -69,9 +65,6 @@ jobs:
             echo "No changes to commit."
           fi
 
-  # =========================================================================
-  # المرحلة 2: بناء تطبيق الأندرويد (Android APK)
-  # =========================================================================
   build-android:
     name: Build Android APK
     needs: unpack-and-commit
@@ -112,9 +105,6 @@ jobs:
           name: AbuShadyTransport-Android-APK
           path: build/app/outputs/flutter-apk/app-release.apk
 
-  # =========================================================================
-  # المرحلة 3: بناء تطبيق الحاسوب (Windows EXE)
-  # =========================================================================
   build-windows:
     name: Build Windows Desktop Release
     needs: unpack-and-commit
@@ -155,3 +145,4 @@ jobs:
         with:
           name: AbuShadyTransport-Windows-x64
           path: AbuShadyTransport-Windows-x64.zip
+
