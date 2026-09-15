@@ -39,7 +39,7 @@ class _CarSettlementScreenState extends State<CarSettlementScreen> {
 
   double get totalSelectedNet => availableTrips
       .where((t) => selectedTripIds.contains(t['id']))
-      .fold(0.0, (sum, t) => sum + (t['net'] as num).toDouble());
+      .fold(0.0, (sum, t) => sum + ((t['net'] as num?)?.toDouble() ?? 0.0));
 
   @override
   Widget build(BuildContext context) {
@@ -77,8 +77,8 @@ class _CarSettlementScreenState extends State<CarSettlementScreen> {
                                 }
                               });
                             },
-                            title: Text('${trip['plateNumber']} - ${trip['driverName']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('نقلة: ${trip['tripName']} | صافي: ${trip['net']} ج.م'),
+                            title: Text('${trip['plateNumber'] ?? "-"} - ${trip['driverName'] ?? "-"}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('نقلة: ${trip['tripName'] ?? "-"} | صافي: ${trip['net'] ?? 0} ج.م'),
                           ),
                         );
                       },

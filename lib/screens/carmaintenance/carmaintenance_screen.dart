@@ -53,9 +53,9 @@ class _CarMaintenanceScreenState extends State<CarMaintenanceScreen> {
                     color: AppColors.surface,
                     margin: const EdgeInsets.only(bottom: 10),
                     child: ListTile(
-                      title: Text('${m['plateNumber']} - ${m['description']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text('تاريخ: ${m['date']} | التكلفة: ${m['amount']} ج.م'),
-                      trailing: Text('${m['amount']} ج.م', style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold)),
+                      title: Text('${m['plateNumber'] ?? "-"} - ${m['description'] ?? "-"}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      subtitle: Text('تاريخ: ${m['date'] ?? "-"} | التكلفة: ${m['amount'] ?? 0} ج.م'),
+                      trailing: Text('${m['amount'] ?? 0} ج.م', style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold)),
                     ),
                   );
                 },

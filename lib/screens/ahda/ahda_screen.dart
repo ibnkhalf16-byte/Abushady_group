@@ -62,18 +62,18 @@ class _AhdaScreenState extends State<AhdaScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(s['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                          Text(s['name'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
                           const Divider(color: AppColors.border),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('رصيد منقول: ${s['previousBalance']} ج.م', style: const TextStyle(color: Colors.white70)),
-                              Text('+ مضاف: ${s['totalAdded']} ج.م', style: const TextStyle(color: AppColors.success)),
-                              Text('- منصرف: ${s['totalSpent']} ج.م', style: const TextStyle(color: AppColors.danger)),
+                              Text('رصيد منقول: ${s['previousBalance'] ?? 0} ج.م', style: const TextStyle(color: Colors.white70)),
+                              Text('+ مضاف: ${s['totalAdded'] ?? 0} ج.م', style: const TextStyle(color: AppColors.success)),
+                              Text('- منصرف: ${s['totalSpent'] ?? 0} ج.م', style: const TextStyle(color: AppColors.danger)),
                             ],
                           ),
                           const SizedBox(height: 10),
-                          Text('صافي الرصيد: ${s['netBalance']} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('صافي الرصيد: ${s['netBalance'] ?? 0} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
                     ),

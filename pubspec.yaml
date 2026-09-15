@@ -12,7 +12,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   http: ^1.2.1
-  intl: ^0.20.3
+  intl: ^0.20.2
   pdf: ^3.11.1
   printing: ^5.13.2
 

@@ -68,9 +68,9 @@ class _DailyScreenState extends State<DailyScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.between,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('${t['carPlate']} - ${t['driverName']}',
+                              Text('${t['carPlate'] ?? "-"} - ${t['driverName'] ?? "-"}',
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
                               if (isSettled)
                                 Container(
@@ -86,17 +86,17 @@ class _DailyScreenState extends State<DailyScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('الوزن: ${t['weight']} طن', style: const TextStyle(color: Colors.white70)),
-                              Text('النولون: ${t['pricePerTon']} ج.م', style: const TextStyle(color: Colors.white70)),
-                              Text('الإجمالي: ${t['totalValue']} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                              Text('الوزن: ${t['weight'] ?? 0} طن', style: const TextStyle(color: Colors.white70)),
+                              Text('النولون: ${t['pricePerTon'] ?? 0} ج.م', style: const TextStyle(color: Colors.white70)),
+                              Text('الإجمالي: ${t['totalValue'] ?? 0} ج.م', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('العهدة: ${t['trustAmount']} ج.م', style: const TextStyle(color: AppColors.danger)),
-                              Text('الصافي: ${t['netAmount']} ج.م', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
+                              Text('العهدة: ${t['trustAmount'] ?? 0} ج.م', style: const TextStyle(color: AppColors.danger)),
+                              Text('الصافي: ${t['netAmount'] ?? 0} ج.م', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold)),
                             ],
                           )
                         ],

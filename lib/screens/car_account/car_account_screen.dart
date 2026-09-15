@@ -54,7 +54,7 @@ class _CarAccountScreenState extends State<CarAccountScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     child: ListTile(
                       title: Text(s['carPlate'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text('إجمالي النقلات: ${s['tripsCount']} | صافي النولون: ${s['netIncome']} ج.م'),
+                      subtitle: Text('إجمالي النقلات: ${s['tripsCount'] ?? 0} | صافي النولون: ${s['netIncome'] ?? 0} ج.م'),
                     ),
                   );
                 },

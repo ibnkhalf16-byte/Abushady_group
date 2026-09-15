@@ -1,5 +1,4 @@
 class ApiConstants {
-  // الرابط المولد عبر Cloudflare Tunnel لخادم الشركة
   static const String baseUrl = 'https://transport.abushady.com/api';
   
   static const String auth = '$baseUrl/Auth';
