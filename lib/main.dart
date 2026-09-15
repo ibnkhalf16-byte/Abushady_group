@@ -38,4 +38,3 @@ class AbuShadyApp extends StatelessWidget {
     );
   }
 }
-
