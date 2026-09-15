@@ -24,7 +24,6 @@ jobs:
           python3 -c '
           import os, re, glob
 
-          # البحث في جميع الملفات النصية
           txt_files = glob.glob("*.txt")
           target_file = None
 
@@ -36,15 +35,14 @@ jobs:
                           target_file = f
                           content = data
                           break
-              except Exception as e:
+              except Exception:
                   continue
 
           if not target_file:
-              print("No valid code master text file found containing === FILE: tags!")
+              print("No valid code master text file found!")
               exit(1)
 
-          print(f"Extracting successfully from: {target_file}")
-
+          print(f"Extracting from: {target_file}")
           parts = re.split(r"=== FILE:\s*(.+?)\s*===", content)
 
           count = 0
@@ -67,6 +65,13 @@ jobs:
           print(f"SUCCESS: Extracted {count} files.")
           '
 
+      - name: Fix intl constraint permanently
+        run: |
+          if [ -f "pubspec.yaml" ]; then
+            sed -i 's/intl: ^0.19.0/intl: ^0.20.3/g' pubspec.yaml
+            sed -i 's/intl: any/intl: ^0.20.3/g' pubspec.yaml
+          fi
+
       - name: Commit and Push Extracted Structure
         run: |
           git config user.name "github-actions[bot]"
@@ -76,7 +81,7 @@ jobs:
             git commit -m "Auto unpack full project source code"
             git push origin HEAD:${{ github.ref }}
           else
-            echo "No changes detected to commit."
+            echo "No changes detected."
           fi
 
   build-android:
@@ -101,15 +106,16 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Create Platform Configs
+      - name: Setup Android Project & Fix Packages
         run: |
           if [ ! -d "android" ]; then
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           fi
+          # ترقية حزمة intl إجبارياً لمنع تعارض flutter_localizations
+          flutter pub add intl:^0.20.3
 
-      - name: Build Android Release
+      - name: Build Android Release APK
         run: |
-          flutter pub get
           flutter build apk --release
 
       - name: Upload APK
@@ -134,18 +140,18 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Enable Desktop
+      - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Create Windows Config
+      - name: Setup Windows Project & Fix Packages
         run: |
           if (!(Test-Path "windows")) {
             flutter create . --project-name abushady_transport --platforms=android,windows --org com.abushady
           }
+          flutter pub add intl:^0.20.3
 
-      - name: Build Windows EXE
+      - name: Build Windows Release
         run: |
-          flutter pub get
           flutter build windows --release
           Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath AbuShadyTransport-Windows-x64.zip -Force
 
